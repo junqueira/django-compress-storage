@@ -37,6 +37,9 @@ Django Settings Configurations
 FILE_COMPRESS_DELETE_OLD_FILE = True # to delete old files after compressed
 FILE_COMPRESS_DELETE_OLD_FILE = False # to not delete old files after compressed
 
+# Feature only for version v9.0+
+FILE_COMPRESS_QUEUE = 'Celery' # by default queue is Celery, but you can change this with this var on settings
+
 
 INSTALLED_APPS = (
     ...
@@ -85,9 +88,9 @@ Shell
 Using with Celery
 -----------------
 
-By default compress_field use Celery if Celery are installed on Site Packages.
-You just need create one post_save on your model to start compress. If you wanna
-auto compress after save.
+If Celery are installed on Site Packages. You just need create one post_save on
+your model to use async compress.
+
 
 ```python
 # listeners.py file
@@ -95,7 +98,19 @@ auto compress after save.
 from django.db.models.signals import post_save
 
 def auto_compress_file_on_post_save(sender, instance, **kargs):
-    instace.upload_file.compress()
+    instance.upload_file.compress()
+
+post_save.connect(auto_compress_file_on_post_save, sender=MyContent)
+
+```
+
+If you don´t wanna use Celery async compress:
+
+
+```python
+
+def auto_compress_file_on_post_save(sender, instance, **kargs):
+    instance.upload_file.compress(async=False)
 
 post_save.connect(auto_compress_file_on_post_save, sender=MyContent)
 
